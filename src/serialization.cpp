@@ -80,6 +80,11 @@ static void JsonWriteNonce(JsonWriter& writer, int nonce)
     writer.String(nonceBuffer);
 }
 
+static bool IsValidRichPresenceButton(const DiscordRichPresenceButton& button)
+{
+    return button.label && button.label[0] && button.url && button.url[0];
+}
+
 size_t JsonWriteRichPresenceObj(char* dest,
                                 size_t maxLen,
                                 int nonce,
@@ -156,6 +161,18 @@ size_t JsonWriteRichPresenceObj(char* dest,
                     WriteOptionalString(writer, "match", presence->matchSecret);
                     WriteOptionalString(writer, "join", presence->joinSecret);
                     WriteOptionalString(writer, "spectate", presence->spectateSecret);
+                }
+
+                constexpr size_t buttonsSize = sizeof(presence->buttons) / sizeof(presence->buttons[0]);
+                if (IsValidRichPresenceButton(presence->buttons[0])) {
+                    WriteArray buttons(writer, "buttons");
+                    for (size_t i = 0; i < buttonsSize; ++i) {
+                        if (IsValidRichPresenceButton(presence->buttons[i])) {
+                            WriteObject button(writer);
+                            WriteOptionalString(writer, "label", presence->buttons[i].label);
+                            WriteOptionalString(writer, "url", presence->buttons[i].url);
+                        }
+                    }
                 }
 
                 writer.Key("instance");
